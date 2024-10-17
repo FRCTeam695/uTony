@@ -8,7 +8,7 @@ import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.Autos;
 import frc.robot.commands.ExampleCommand;
 import frc.robot.commands.LEDCommand;
-import frc.robot.subsystems.DriveTrainSubsystem;
+// import frc.robot.subsystems.DriveTrainSubsystem;
 import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.LEDSubsystem;
 import frc.robot.subsystems.MotorSubsystem;
@@ -58,7 +58,7 @@ public class RobotContainer {
   // private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
   private final LEDSubsystem m_LedSubsystem = new LEDSubsystem(xAxisL);
   private final MotorSubsystem m_MotorSubsystem = new MotorSubsystem();
-  private final DriveTrainSubsystem m_DriveTrainSubsystem = new DriveTrainSubsystem();
+  // private final DriveTrainSubsystem m_DriveTrainSubsystem = new DriveTrainSubsystem();
 
 
   // Replace with CommandPS4Controller or CommandJoystick if needed
@@ -87,7 +87,7 @@ public class RobotContainer {
 
     greenButton.onTrue(m_LedSubsystem.setColor( 0, 255, 0));
     redButton.onTrue(m_LedSubsystem.setColor( 255, 0, 0));
-    yellowButton.onTrue(m_LedSubsystem.setColor( 255, 255, 0));
+    yellowButton.onTrue(m_MotorSubsystem.runMotorUntilLimitSwitch(()->1));
     blueButton.onTrue(m_LedSubsystem.setColor( 0, 0, 255));
     // leftBumper.whileTrue(m_MotorSubsystem.runMotor(xAxisL));
 
