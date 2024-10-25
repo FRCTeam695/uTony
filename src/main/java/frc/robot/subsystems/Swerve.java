@@ -7,6 +7,7 @@ package frc.robot.subsystems;
 import java.util.function.DoubleSupplier;
 
 import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.math.controller.PIDController;
@@ -21,6 +22,7 @@ public class Swerve extends SubsystemBase {
   final TalonFX m_rot = new TalonFX(0, "rio");
   final DutyCycleOut m_linReq = new DutyCycleOut(0.0);
   final DutyCycleOut m_rotReq = new DutyCycleOut(0.0);
+  final CANcoder m_rotEncoder = new CANcoder(0);
 
   //pid controllers
   final PIDController m_lin_PID = new PIDController(0, 0, 0); //speed (m/s)
@@ -53,11 +55,11 @@ public class Swerve extends SubsystemBase {
       m_lin_PID.setSetpoint(0);
   }
 
-  private void runPIDMotors(){//edit**
+  private void runPIDMotors(){
     m_rot_PID.setSetpoint(runAngle);
     m_lin_PID.setSetpoint(runSpeed);
-    m_lin.setControl(m_linReq.withOutput(m_lin_PID.calculate(runSpeed)));
-    m_rot.setControl(m_rotReq.withOutput(m_rot_PID.calculate(runAngle)));
+    m_lin.setControl(m_linReq.withOutput(m_lin_PID.calculate(runSpeed)));//REPLACE WITH ENCODER
+    m_rot.setControl(m_rotReq.withOutput(m_rot_PID.calculate((m_rotEncoder.getAbsolutePosition().getValueAsDouble())*2*Math.PI)));
   }
 
   private void calculateMotorSwerveDrive(){
@@ -87,14 +89,10 @@ public class Swerve extends SubsystemBase {
     //Multiply by max speed
     m_STR *= MAX_SPEED_OF_MOTOR;
     m_FWD *= MAX_SPEED_OF_MOTOR;
-
+    
     //convert to angle and magnitude
-    if(m_FWD == 0){//divide by 0 error case 
-        runAngle = Math.asin(m_STR/magnitude);
-    }else {
-        runAngle = Math.atan(m_STR/m_FWD);
-    }
-
+    if(magnitude != 0)//if stopped, do not change angle
+      runAngle = Math.atan2(m_STR, m_FWD);
     runSpeed = magnitude;
   }
 
@@ -102,9 +100,7 @@ public class Swerve extends SubsystemBase {
     return new FunctionalCommand(
       () -> {resetClass();},
       () -> {
-
-        //main motor loop
-
+        //main motor loop 
         calculateMotorSwerveDrive();//calculate angle and speed
         runPIDMotors();//send to motors
       }, 
