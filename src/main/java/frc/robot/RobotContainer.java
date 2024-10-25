@@ -87,7 +87,7 @@ public class RobotContainer {
 
     greenButton.onTrue(m_LedSubsystem.setColor( 0, 255, 0));
     redButton.onTrue(m_LedSubsystem.setColor( 255, 0, 0));
-    yellowButton.onTrue(m_MotorSubsystem.runMotorUntilLimitSwitch(()->1));
+    yellowButton.onTrue(m_MotorSubsystem.runMotorVelocityPIDTEST(xAxisL));
     blueButton.onTrue(m_LedSubsystem.setColor( 0, 0, 255));
     // leftBumper.whileTrue(m_MotorSubsystem.runMotor(xAxisL));
 
