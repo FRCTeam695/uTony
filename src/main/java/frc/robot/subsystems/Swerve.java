@@ -28,14 +28,14 @@ public class Swerve extends SubsystemBase {
 
   //constant
   final Double MAX_SPEED_OF_MOTOR = 1.0;//REPLACE WITH m/s
-
+  
   //controller inputs
   DoubleSupplier FWD_ctr;
   DoubleSupplier STR_ctr;
   DoubleSupplier ROT_ctr;
 
   //motor vector values
-  double runAngle;//radians
+  double runAngle;//radians 0 is straight forward, positive is
   double runSpeed;//speed (m/s)
 
   public Swerve(DoubleSupplier FWD, DoubleSupplier STR, DoubleSupplier ROT) {
@@ -46,11 +46,21 @@ public class Swerve extends SubsystemBase {
     runSpeed = 0;
     m_rot_PID.enableContinuousInput(-Math.PI, Math.PI);
   }
-  public void resetClass(){
+  
+  private void resetClass(){
     //to implement
+      m_rot_PID.setSetpoint(0);
+      m_lin_PID.setSetpoint(0);
   }
 
-  private void calculateMotorDrive(){
+  private void runPIDMotors(){//edit**
+    m_rot_PID.setSetpoint(runAngle);
+    m_lin_PID.setSetpoint(runSpeed);
+    m_lin.setControl(m_linReq.withOutput(m_lin_PID.calculate(runSpeed)));
+    m_rot.setControl(m_rotReq.withOutput(m_rot_PID.calculate(runAngle)));
+  }
+
+  private void calculateMotorSwerveDrive(){
     //init power vector
     double m_STR = 0;
     double m_FWD = 0;
@@ -71,6 +81,7 @@ public class Swerve extends SubsystemBase {
     if(magnitude > 1){
       m_STR /= magnitude;
       m_FWD /= magnitude;
+      magnitude = 1;
     }
 
     //Multiply by max speed
@@ -78,24 +89,81 @@ public class Swerve extends SubsystemBase {
     m_FWD *= MAX_SPEED_OF_MOTOR;
 
     //convert to angle and magnitude
-    runAngle = 0; //CHANGE *******
-    runSpeed = Math.sqrt(m_FWD*m_FWD + m_STR*m_STR);
+    if(m_FWD == 0){//divide by 0 error case 
+        runAngle = Math.asin(m_STR/magnitude);
+    }else {
+        runAngle = Math.atan(m_STR/m_FWD);
+    }
+
+    runSpeed = magnitude;
   }
 
   public Command runSwerve(){
     return new FunctionalCommand(
       () -> {resetClass();},
       () -> {
-        //main motor vloop
-        calculateMotorDrive();
-        m_rot_PID.setSetpoint(runAngle);
-        m_lin_PID.setSetpoint(runSpeed);
+
+        //main motor loop
+
+        calculateMotorSwerveDrive();//calculate angle and speed
+        runPIDMotors();//send to motors
       }, 
-      interrupted -> {},
-      () -> true,
+      interrupted -> {
+        resetClass();
+      },
+      () -> false,
       this
     );
   }
+  
+  private void calculateSingleMotor(){
+    //init power vector
+    double m_STR = 0;
+    double m_FWD = 0;
+
+    //FWD and STR contribution
+    m_STR = STR_ctr.getAsDouble();
+    m_FWD = FWD_ctr.getAsDouble();
+
+    //normalize vector if greater than max
+    double magnitude = Math.sqrt(m_FWD*m_FWD + m_STR*m_STR);
+
+    if(magnitude > 1){
+      m_STR /= magnitude;
+      m_FWD /= magnitude;
+      magnitude = 1;
+    }
+
+    //Multiply by max speed
+    m_STR *= MAX_SPEED_OF_MOTOR;
+    m_FWD *= MAX_SPEED_OF_MOTOR;
+
+    //convert to angle and magnitude
+    if(m_FWD == 0){//divide by 0 error case 
+        runAngle = Math.asin(m_STR/magnitude);
+    }else {
+        runAngle = Math.atan(m_STR/m_FWD);
+    }
+
+    runSpeed = magnitude;
+  }
+  
+  public Command runSingleMotor(){
+    return new FunctionalCommand(
+      () -> {resetClass();},
+      () -> {
+        //main motor vloop
+        calculateSingleMotor();//calculate angle and speed
+        runPIDMotors();//send to motors
+      }, 
+      interrupted -> {
+        resetClass();
+      },
+      () -> false,
+      this
+    );
+  }
+
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
