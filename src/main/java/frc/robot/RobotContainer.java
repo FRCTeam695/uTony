@@ -12,6 +12,7 @@ import frc.robot.commands.LEDCommand;
 import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.LEDSubsystem;
 import frc.robot.subsystems.MotorSubsystem;
+import frc.robot.subsystems.SwerveSubsystem;
 
 import java.sql.Driver;
 import java.util.function.DoubleSupplier;
@@ -56,8 +57,9 @@ public class RobotContainer {
   private final DoubleSupplier yAxisR = () -> m_Joystick.getRawAxis(5);
 
   // private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
-  private final LEDSubsystem m_LedSubsystem = new LEDSubsystem(xAxisL);
-  private final MotorSubsystem m_MotorSubsystem = new MotorSubsystem();
+  // private final LEDSubsystem m_LedSubsystem = new LEDSubsystem(xAxisL);
+  // private final MotorSubsystem m_MotorSubsystem = new MotorSubsystem();
+  private final SwerveSubsystem m_SwerveSubsystem = new SwerveSubsystem(yAxisL,xAxisL, xAxisR); 
   // private final DriveTrainSubsystem m_DriveTrainSubsystem = new DriveTrainSubsystem();
 
 
@@ -85,10 +87,10 @@ public class RobotContainer {
     // new Trigger(m_exampleSubsystem::exampleCondition)
     //     .onTrue(new ExampleCommand(m_exampleSubsystem));
 
-    greenButton.onTrue(m_LedSubsystem.setColor( 0, 255, 0));
-    redButton.onTrue(m_LedSubsystem.setColor( 255, 0, 0));
-    yellowButton.onTrue(m_MotorSubsystem.runMotorVelocityPIDTEST(xAxisL));
-    blueButton.onTrue(m_LedSubsystem.setColor( 0, 0, 255));
+    // greenButton.onTrue(m_LedSubsystem.setColor( 0, 255, 0));
+    // redButton.onTrue(m_LedSubsystem.setColor( 255, 0, 0));
+    // // yellowButton.onTrue(m_MotorSubsystem.runMotorVelocityPIDTEST(xAxisL));
+    // blueButton.onTrue(m_LedSubsystem.setColor( 0, 0, 255));
     // leftBumper.whileTrue(m_MotorSubsystem.runMotor(xAxisL));
 
 
@@ -104,6 +106,9 @@ public class RobotContainer {
     //tank+arcadedrive
     // m_DriveTrainSubsystem.setDefaultCommand(m_DriveTrainSubsystem.driveTank(yAxisL,yAxisR));
     // m_DriveTrainSubsystem.setDefaultCommand(m_DriveTrainSubsystem.driveArcade(yAxisL, xAxisR));
+
+    //Swerve drive
+    m_SwerveSubsystem.setDefaultCommand(m_SwerveSubsystem.runSwerve());
   }
 
   /**
