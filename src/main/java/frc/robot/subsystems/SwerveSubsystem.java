@@ -6,6 +6,8 @@ package frc.robot.subsystems;
 
 import java.util.function.DoubleSupplier;
 
+import org.opencv.core.MatOfInt;
+
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -73,12 +75,22 @@ public class SwerveSubsystem extends SubsystemBase {
     m_rot.setControl(m_rotReq.withOutput(m_rot_PID.calculate((m_rotEncoder.getAbsolutePosition().getValueAsDouble())*2*Math.PI)));
   }
 
-  private double deadbandInput(DoubleSupplier doub, double deadband){
-    if(Math.abs(doub.getAsDouble()) < deadband ){
+  private double deadbandInput(DoubleSupplier input, double deadband){
+    double num = input.getAsDouble();
+    if(Math.abs(num) < deadband ){
       return 0;
     } else{
-      return (doub.getAsDouble()-deadband)/(1-deadband);
+      if(num>0)
+        return (num-deadband)/(1-deadband);
+      else
+        return (num+deadband)/(-1+deadband);
     }
+  }
+
+  private double distBetweenAngle(double ang1, double ang2){
+    double min = Math.min(ang1, ang2);
+    double max = Math.max(ang1, ang2);
+    return Math.min(max-min,Math.abs(-Math.PI-min)+ Math.abs(Math.PI-max));
   }
 
   private void calculateMotorSwerveDrive(){
@@ -97,8 +109,8 @@ public class SwerveSubsystem extends SubsystemBase {
       m_STR = 0;
       m_FWD = 0;
     } else{
-      m_STR = (m_STR-dead)/(1-dead);
-      m_FWD = (m_FWD-dead)/(1-dead);
+      m_STR = (m_STR>0)?(m_STR-dead)/(1-dead):(m_STR+dead)/(-1+dead);
+      m_FWD = (m_FWD>0)?(m_FWD-dead)/(1-dead):(m_FWD+dead)/(-1+dead);
     }
     m_ROT = deadbandInput(ROT_ctr, ROT_DEADBAND);
 
@@ -117,8 +129,7 @@ public class SwerveSubsystem extends SubsystemBase {
     m_STR += ROT_STR;
     m_FWD += ROT_FWD;
 
-    //normalize vector if greater than max
-    double magnitude = Math.sqrt(m_FWD*m_FWD + m_STR*m_STR);
+
     
     // m_STR /= magnitude;
     // m_FWD /= magnitude;
@@ -132,9 +143,21 @@ public class SwerveSubsystem extends SubsystemBase {
     SmartDashboard.putNumber("FWD", m_FWD);
     
     //convert to angle and magnitude
+    double desiredSpeed = Math.sqrt(m_FWD*m_FWD + m_STR*m_STR);
+    double desiredAngle = Math.atan2(m_STR, m_FWD);
 
-    runAngle = Math.atan2(m_STR, m_FWD);
-    runSpeed = magnitude;
+    if(distBetweenAngle(desiredAngle, runAngle) > Math.PI/2){//angle greater than 90 degrees so flip
+      desiredAngle = desiredAngle - Math.PI;//flip angle
+      if(Math.abs(desiredAngle) > Math.PI){//if not within -180 to 180, add 360 to maintain range
+        desiredAngle = desiredAngle + 2*Math.PI;
+      }
+
+      desiredSpeed = -desiredSpeed;//flip speed
+    }
+
+    //send to motor
+    runAngle = desiredAngle;
+    runSpeed = desiredSpeed;
   }
 
   public Command runSwerve(){
